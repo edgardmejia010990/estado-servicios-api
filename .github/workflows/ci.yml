@@ -1,0 +1,31 @@
+name: CI - Validacion de PR
+
+# Cuándo se ejecuta este pipeline:
+on:
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch: # Permite ejecutarlo manualmente desde GitHub
+
+jobs:
+  test-y-seguridad:
+    runs-on: ubuntu-latest # Máquina virtual temporal de GitHub
+
+    steps:
+      - name: 1. Descargar el codigo del repo
+        uses: actions/checkout@v4
+
+      - name: 2. Instalar Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: 3. Ejecutar pruebas unitarias
+        run: npm test
+
+      - name: 4. Verificar que no haya archivos .env subidos
+        run: |
+          if [ -f ".env" ]; then
+            echo "Error: se detecto un archivo .env en el repositorio"
+            exit 1
+          fi
+          echo "Higiene de secretos OK"
