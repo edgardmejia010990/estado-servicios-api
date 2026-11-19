@@ -1,0 +1,10 @@
+{
+  "name": "estado-servicios-api",
+  "version": "1.0.0",
+  "description": "API de practica para aprender GitHub y CI/CD",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "test": "node --test"
+  }
+}
