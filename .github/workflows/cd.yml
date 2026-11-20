@@ -1,0 +1,47 @@
+name: CD - Build, Scan y Push a GHCR
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+# Principio de minimo privilegio para el token temporal de GitHub
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build-scan-push:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 1. Descargar el codigo
+        uses: actions/checkout@v4
+
+      - name: 2. Definir nombre de imagen en minusculas
+        run: |
+          IMAGE_NAME="ghcr.io/${GITHUB_REPOSITORY,,}"
+          echo "IMAGE_NAME=$IMAGE_NAME" >> $GITHUB_ENV
+          echo "IMAGE_TAG=${GITHUB_SHA::7}" >> $GITHUB_ENV
+
+      - name: 3. Construir imagen Docker
+        run: docker build -t $IMAGE_NAME:$IMAGE_TAG .
+
+      - name: 4. Escanear vulnerabilidades con Trivy
+        run: |
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
+            aquasec/trivy:latest image \
+            --severity HIGH,CRITICAL \
+            --exit-code 1 \
+            --ignore-unfixed \
+            $IMAGE_NAME:$IMAGE_TAG
+
+      - name: 5. Iniciar sesion en GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 6. Publicar imagen con tag inmutable (SHA)
+        run: docker push $IMAGE_NAME:$IMAGE_TAG
