@@ -1,16 +1,12 @@
-FROM node:22-alpine
+# Imagen minima de produccion: sin npm, sin yarn y sin shell
+FROM gcr.io/distroless/nodejs22-debian12:nonroot
 
-# Directorio de trabajo dentro del contenedor
 WORKDIR /app
 
-# Copiamos los archivos de la aplicacion
+# Copiamos solo lo necesario para ejecutar la app
 COPY package.json index.js ./
 
-# Buena practica DevSecOps: no correr como root
-USER node
-
-# Puerto que expone la API
 EXPOSE 3000
 
-# Comando de inicio
-CMD ["npm", "start"]
+# En distroless el entrypoint ya es "node", por eso solo pasamos "index.js"
+CMD ["index.js"]
